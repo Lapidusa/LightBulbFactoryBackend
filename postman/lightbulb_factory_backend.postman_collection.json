@@ -1,0 +1,143 @@
+{
+  "info": {
+    "name": "LightBulb Factory Microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Separate Product, Order and Admin Panel service collections in one file."
+  },
+  "variable": [
+    { "key": "productUrl", "value": "http://127.0.0.1:18001" },
+    { "key": "orderUrl", "value": "http://127.0.0.1:18002" },
+    { "key": "adminUrl", "value": "http://127.0.0.1:18003" },
+    { "key": "authToken", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "orderNumber", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Product Service - Public",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "url": "{{productUrl}}/health" } },
+        { "name": "List categories", "request": { "method": "GET", "url": "{{productUrl}}/api/v1/categories" } },
+        {
+          "name": "List products with filters",
+          "request": { "method": "GET", "url": "{{productUrl}}/api/v1/products?base_type=E27&sort_by=price&sort_order=asc&page=1&page_size=12" }
+        },
+        { "name": "Get product", "request": { "method": "GET", "url": "{{productUrl}}/api/v1/products/{{productId}}" } }
+      ]
+    },
+    {
+      "name": "Order Service - Public",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "url": "{{orderUrl}}/health" } },
+        {
+          "name": "Create order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{orderUrl}}/api/v1/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Иван Иванов\",\n  \"customer_phone\": \"+79990000000\",\n  \"customer_email\": \"ivan@example.com\",\n  \"city\": \"Москва\",\n  \"address\": \"ул. Ламповая, 1\",\n  \"delivery_type\": \"courier\",\n  \"payment_type\": \"cash_on_delivery\",\n  \"comment\": \"Позвонить заранее\",\n  \"items\": [\n    { \"product_id\": \"{{productId}}\", \"quantity\": 2 }\n  ]\n}"
+            }
+          }
+        },
+        { "name": "Get order by number", "request": { "method": "GET", "url": "{{orderUrl}}/api/v1/orders/{{orderNumber}}" } }
+      ]
+    },
+    {
+      "name": "Admin Panel Service",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "url": "{{adminUrl}}/health" } },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{adminUrl}}/api/v1/admin/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}" }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": "{{adminUrl}}/api/v1/admin/me"
+          }
+        },
+        {
+          "name": "Dashboard summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": "{{adminUrl}}/api/v1/admin/dashboard/summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Routed Product API",
+      "item": [
+        {
+          "name": "Admin list products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": "{{adminUrl}}/api/v1/admin/products"
+          }
+        },
+        {
+          "name": "Patch product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{adminUrl}}/api/v1/admin/products/{{productId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 349.00,\n  \"stock_qty\": 15\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Routed Order API",
+      "item": [
+        {
+          "name": "Admin list orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": "{{adminUrl}}/api/v1/admin/orders?page=1&page_size=20"
+          }
+        },
+        {
+          "name": "Change order status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{adminUrl}}/api/v1/admin/orders/{{orderId}}/status",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"processing\"\n}" }
+          }
+        },
+        {
+          "name": "Update admin comment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{adminUrl}}/api/v1/admin/orders/{{orderId}}/comment",
+            "body": { "mode": "raw", "raw": "{\n  \"admin_comment\": \"Проверить адрес доставки\"\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}

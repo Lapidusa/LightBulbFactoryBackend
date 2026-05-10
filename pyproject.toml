@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "lightbulb-factory-backend"
+version = "0.1.0"
+description = "FastAPI backend for a light bulb factory internet shop"
+authors = ["Student <student@example.com>"]
+readme = "README.md"
+packages = [{ include = "services" }, { include = "shared" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.12"
+uvicorn = { extras = ["standard"], version = "^0.34.2" }
+sqlalchemy = "^2.0.40"
+psycopg = { extras = ["binary"], version = "^3.2.10" }
+pydantic-settings = "^2.9.1"
+passlib = "^1.7.4"
+python-multipart = "^0.0.20"
+email-validator = "^2.2.0"
+httpx = "^0.28.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+ruff = "^0.11.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

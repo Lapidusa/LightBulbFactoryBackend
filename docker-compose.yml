@@ -1,0 +1,120 @@
+services:
+  product_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_password
+    ports:
+      - "15433:5432"
+    volumes:
+      - product_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_user -d product_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  order_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_password
+    ports:
+      - "15434:5432"
+    volumes:
+      - order_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  admin_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: admin_db
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: admin_password
+    ports:
+      - "15435:5432"
+    volumes:
+      - admin_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d admin_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  product_service:
+    build:
+      context: .
+      dockerfile: services/product_service/Dockerfile
+    environment:
+      PRODUCT_DATABASE_URL: postgresql+psycopg://product_user:product_password@product_db:5432/product_db
+      INTERNAL_API_TOKEN: dev-internal-token
+    ports:
+      - "18001:8001"
+    depends_on:
+      product_db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  order_service:
+    build:
+      context: .
+      dockerfile: services/order_service/Dockerfile
+    environment:
+      ORDER_DATABASE_URL: postgresql+psycopg://order_user:order_password@order_db:5432/order_db
+      PRODUCT_SERVICE_URL: http://product_service:8001
+      INTERNAL_API_TOKEN: dev-internal-token
+    ports:
+      - "18002:8002"
+    depends_on:
+      order_db:
+        condition: service_healthy
+      product_service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  admin_service:
+    build:
+      context: .
+      dockerfile: services/admin_service/Dockerfile
+    environment:
+      ADMIN_DATABASE_URL: postgresql+psycopg://admin_user:admin_password@admin_db:5432/admin_db
+      PRODUCT_SERVICE_URL: http://product_service:8001
+      ORDER_SERVICE_URL: http://order_service:8002
+      INTERNAL_API_TOKEN: dev-internal-token
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      ADMIN_FULL_NAME: System Administrator
+      SESSION_TTL_MINUTES: 1440
+    ports:
+      - "18003:8003"
+    depends_on:
+      admin_db:
+        condition: service_healthy
+      product_service:
+        condition: service_healthy
+      order_service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  product_pg_data:
+  order_pg_data:
+  admin_pg_data:
