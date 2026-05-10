@@ -19,10 +19,41 @@
       "name": "Product Service - Public",
       "item": [
         { "name": "Health", "request": { "method": "GET", "url": "{{productUrl}}/health" } },
-        { "name": "List categories", "request": { "method": "GET", "url": "{{productUrl}}/api/v1/categories" } },
+        {
+          "name": "List categories",
+          "request": { "method": "GET", "url": "{{productUrl}}/api/v1/categories" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.length > 0) {",
+                  "  pm.collectionVariables.set('categoryId', response.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
         {
           "name": "List products with filters",
-          "request": { "method": "GET", "url": "{{productUrl}}/api/v1/products?base_type=E27&sort_by=price&sort_order=asc&page=1&page_size=12" }
+          "request": { "method": "GET", "url": "{{productUrl}}/api/v1/products?base_type=E27&sort_by=price&sort_order=asc&page=1&page_size=12" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.length > 0) {",
+                  "  pm.collectionVariables.set('productId', response.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         { "name": "Get product", "request": { "method": "GET", "url": "{{productUrl}}/api/v1/products/{{productId}}" } }
       ]
@@ -41,7 +72,21 @@
               "mode": "raw",
               "raw": "{\n  \"customer_name\": \"Иван Иванов\",\n  \"customer_phone\": \"+79990000000\",\n  \"customer_email\": \"ivan@example.com\",\n  \"city\": \"Москва\",\n  \"address\": \"ул. Ламповая, 1\",\n  \"delivery_type\": \"courier\",\n  \"payment_type\": \"cash_on_delivery\",\n  \"comment\": \"Позвонить заранее\",\n  \"items\": [\n    { \"product_id\": \"{{productId}}\", \"quantity\": 2 }\n  ]\n}"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.order_number) {",
+                  "  pm.collectionVariables.set('orderNumber', response.data.order_number);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         { "name": "Get order by number", "request": { "method": "GET", "url": "{{orderUrl}}/api/v1/orders/{{orderNumber}}" } }
       ]
@@ -57,7 +102,21 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{adminUrl}}/api/v1/admin/auth/login",
             "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}" }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.access_token) {",
+                  "  pm.collectionVariables.set('authToken', response.data.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Me",
@@ -111,7 +170,21 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
             "url": "{{adminUrl}}/api/v1/admin/orders?page=1&page_size=20"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.length > 0) {",
+                  "  pm.collectionVariables.set('orderId', response.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Change order status",

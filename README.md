@@ -149,3 +149,12 @@ Authorization: Bearer <access_token>
 - `productId`: id товара из Product Service
 - `orderId`: id заказа из Admin Service
 - `orderNumber`: номер созданного заказа
+
+Рекомендуемый порядок запросов:
+
+1. `Product Service - Public / List products with filters` заполняет `productId`.
+2. `Admin Panel Service / Login` заполняет `authToken`.
+3. `Order Service - Public / Create order` заполняет `orderNumber`.
+4. `Admin Routed Order API / Admin list orders` заполняет `orderId`.
+
+Если `productId` пустой, запрос `GET /api/v1/products/{{productId}}` превращается в `/api/v1/products/`, FastAPI редиректит его на список товаров, и в ответе будет массив.
