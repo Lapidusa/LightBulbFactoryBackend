@@ -1,0 +1,118 @@
+services:
+  product_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_password
+    ports:
+      - "15433:5432"
+    volumes:
+      - product_pg_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_user -d product_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  order_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_password
+    ports:
+      - "15434:5432"
+    volumes:
+      - order_pg_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  admin_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: admin_db
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: admin_password
+    ports:
+      - "15435:5432"
+    volumes:
+      - admin_pg_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d admin_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  product_service:
+    build:
+      context: .
+      dockerfile: services/product_service/Dockerfile
+    command: uvicorn services.product_service.main:app --host 0.0.0.0 --port 8001 --reload
+    environment:
+      PRODUCT_DATABASE_URL: postgresql+psycopg://product_user:product_password@product_db:5432/product_db
+      INTERNAL_API_TOKEN: dev-internal-token
+    ports:
+      - "18001:8001"
+    volumes:
+      - ./services:/app/services
+      - ./shared:/app/shared
+    depends_on:
+      product_db:
+        condition: service_healthy
+
+  order_service:
+    build:
+      context: .
+      dockerfile: services/order_service/Dockerfile
+    command: uvicorn services.order_service.main:app --host 0.0.0.0 --port 8002 --reload
+    environment:
+      ORDER_DATABASE_URL: postgresql+psycopg://order_user:order_password@order_db:5432/order_db
+      PRODUCT_SERVICE_URL: http://product_service:8001
+      INTERNAL_API_TOKEN: dev-internal-token
+    ports:
+      - "18002:8002"
+    volumes:
+      - ./services:/app/services
+      - ./shared:/app/shared
+    depends_on:
+      order_db:
+        condition: service_healthy
+      product_service:
+        condition: service_started
+
+  admin_service:
+    build:
+      context: .
+      dockerfile: services/admin_service/Dockerfile
+    command: uvicorn services.admin_service.main:app --host 0.0.0.0 --port 8003 --reload
+    environment:
+      ADMIN_DATABASE_URL: postgresql+psycopg://admin_user:admin_password@admin_db:5432/admin_db
+      PRODUCT_SERVICE_URL: http://product_service:8001
+      ORDER_SERVICE_URL: http://order_service:8002
+      INTERNAL_API_TOKEN: dev-internal-token
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      ADMIN_FULL_NAME: System Administrator
+      SESSION_TTL_MINUTES: 1440
+    ports:
+      - "18003:8003"
+    volumes:
+      - ./services:/app/services
+      - ./shared:/app/shared
+    depends_on:
+      admin_db:
+        condition: service_healthy
+      product_service:
+        condition: service_started
+      order_service:
+        condition: service_started
+
+volumes:
+  product_pg_data_dev:
+  order_pg_data_dev:
+  admin_pg_data_dev:
+
